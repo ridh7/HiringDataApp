@@ -35,7 +35,7 @@ class ItemAdapter : RecyclerView.Adapter<ItemAdapter.ItemViewHolder>() {
 
         fun bind(item: Item) {
             tvId.text = "ID: ${item.id}"
-            tvName.text = item.name
+            tvName.text = "Name: ${item.name}"
         }
     }
 }
