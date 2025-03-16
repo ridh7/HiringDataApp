@@ -13,10 +13,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -26,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.hiringdataapp.model.Item
 import com.example.hiringdataapp.viewmodel.ItemViewModel
+import kotlin.math.exp
 
 class MainActivity : ComponentActivity() {
 
@@ -41,11 +47,26 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(viewModel: ItemViewModel) {
     val items by viewModel.items.observeAsState(emptyMap())
     val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState(null)
+
+    var selectedSortOption by remember { mutableStateOf("id") }
+    var expanded by remember { mutableStateOf(false) }
+    val sortOptions = listOf("id", "name")
+
+    val sortedItems = remember(items, selectedSortOption) {
+        items.entries.sortedBy { it.key }.associate { (listId, groupItems) ->
+            listId to when(selectedSortOption) {
+                "id" -> groupItems.sortedBy { it.id }
+                "name" -> groupItems.sortedBy { it.name }
+                else -> groupItems
+            }
+        }
+    }
 
     val context = LocalContext.current
     LaunchedEffect(error) { error?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() } }
@@ -53,44 +74,84 @@ fun MainScreen(viewModel: ItemViewModel) {
     Scaffold(
         modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
-            PullRefresh(
-                isRefreshing = isLoading,
-                onRefresh = { viewModel.fetchItems() }
+        Column(modifier = Modifier
+            .padding(paddingValues)
+            .fillMaxSize()
+        ) {
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = !expanded },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
             ) {
-                if (isLoading && items.isEmpty()) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center).padding(16.dp)
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(8.dp)
-                    ) {
-                        // Flatten groups into the single LazyColumn
-                        items.entries.sortedBy { it.key }.forEach { (listId, groupItems) ->
-                            // Add group header as an item
-                            item {
-                                Card(
-                                    modifier = Modifier.fillMaxWidth().padding(4.dp),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text(
-                                        text = "List ID: $listId",
-                                        style = MaterialTheme.typography.titleLarge,
-                                        color = MaterialTheme.colorScheme.onPrimary,
+                TextField(
+                    value = "Sort by $selectedSortOption",
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+                    modifier = Modifier
+                        .menuAnchor()
+                        .fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    sortOptions.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text("Sort by: $option") },
+                            onClick = {
+                                selectedSortOption = option
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+            Box {
+                PullRefresh(
+                    isRefreshing = isLoading,
+                    onRefresh = { viewModel.fetchItems() }
+                ) {
+                    if (isLoading && items.isEmpty()) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .padding(16.dp)
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(8.dp)
+                        ) {
+                            // Flatten groups into the single LazyColumn
+                            sortedItems.forEach { (listId, groupItems) ->
+                                // Add group header as an item
+                                item {
+                                    Card(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .background(MaterialTheme.colorScheme.primary)
-                                            .padding(8.dp)
-                                    )
+                                            .padding(4.dp),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            text = "List ID: $listId",
+                                            style = MaterialTheme.typography.titleLarge,
+                                            color = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(MaterialTheme.colorScheme.primary)
+                                                .padding(8.dp)
+                                        )
+                                    }
                                 }
-                            }
-                            // Add items for this group
-                            items(groupItems) { item ->
-                                ItemRow(item)
-                                HorizontalDivider()
+                                // Add items for this group
+                                items(groupItems) { item ->
+                                    ItemRow(item)
+                                    HorizontalDivider()
+                                }
                             }
                         }
                     }
