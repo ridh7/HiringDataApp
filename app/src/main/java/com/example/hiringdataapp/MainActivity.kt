@@ -6,6 +6,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -47,6 +48,8 @@ fun MainScreen(viewModel: ItemViewModel) {
     val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState(null)
 
+    var expandedGroups = remember { mutableStateMapOf<Int, Boolean>() }
+
     val context = LocalContext.current
     LaunchedEffect(error) { error?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() } }
 
@@ -72,12 +75,18 @@ fun MainScreen(viewModel: ItemViewModel) {
                             // Add group header as an item
                             item {
                                 Card(
-                                    modifier = Modifier.fillMaxWidth().padding(4.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(4.dp)
+                                        .clickable {
+                                            expandedGroups[listId] = !(expandedGroups[listId] ?: false)
+                                        }
+                                    ,
                                     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                                     shape = RoundedCornerShape(8.dp)
                                 ) {
                                     Text(
-                                        text = "List ID: $listId",
+                                        text = "List ID: $listId${if (expandedGroups[listId] == true) " ▼" else " ▶"}",
                                         style = MaterialTheme.typography.titleLarge,
                                         color = MaterialTheme.colorScheme.onPrimary,
                                         modifier = Modifier
@@ -88,9 +97,11 @@ fun MainScreen(viewModel: ItemViewModel) {
                                 }
                             }
                             // Add items for this group
-                            items(groupItems) { item ->
-                                ItemRow(item)
-                                HorizontalDivider()
+                            if (expandedGroups[listId] == true) {
+                                items(groupItems) { item ->
+                                    ItemRow(item)
+                                    HorizontalDivider()
+                                }
                             }
                         }
                     }
