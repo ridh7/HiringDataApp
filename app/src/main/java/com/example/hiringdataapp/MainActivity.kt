@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -47,50 +48,72 @@ fun MainScreen(viewModel: ItemViewModel) {
     val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState(null)
 
+    val selectedItemIds = remember { mutableStateListOf<Int>() }
+
     val context = LocalContext.current
     LaunchedEffect(error) { error?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() } }
 
     Scaffold(
         modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
-            PullRefresh(
-                isRefreshing = isLoading,
-                onRefresh = { viewModel.fetchItems() }
-            ) {
-                if (isLoading && items.isEmpty()) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center).padding(16.dp)
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(8.dp)
-                    ) {
-                        // Flatten groups into the single LazyColumn
-                        items.entries.sortedBy { it.key }.forEach { (listId, groupItems) ->
-                            // Add group header as an item
-                            item {
-                                Card(
-                                    modifier = Modifier.fillMaxWidth().padding(4.dp),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text(
-                                        text = "List ID: $listId",
-                                        style = MaterialTheme.typography.titleLarge,
-                                        color = MaterialTheme.colorScheme.onPrimary,
+        Column(
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+        ) {
+            Text(
+                text = "Selected Items: ${selectedItemIds.size}"
+            )
+            Box {
+                PullRefresh(
+                    isRefreshing = isLoading,
+                    onRefresh = { viewModel.fetchItems() }
+                ) {
+                    if (isLoading && items.isEmpty()) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .padding(16.dp)
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(8.dp)
+                        ) {
+                            // Flatten groups into the single LazyColumn
+                            items.entries.sortedBy { it.key }.forEach { (listId, groupItems) ->
+                                // Add group header as an item
+                                item {
+                                    Card(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .background(MaterialTheme.colorScheme.primary)
-                                            .padding(8.dp)
-                                    )
+                                            .padding(4.dp),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            text = "List ID: $listId",
+                                            style = MaterialTheme.typography.titleLarge,
+                                            color = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(MaterialTheme.colorScheme.primary)
+                                                .padding(8.dp)
+                                        )
+                                    }
                                 }
-                            }
-                            // Add items for this group
-                            items(groupItems) { item ->
-                                ItemRow(item)
-                                HorizontalDivider()
+                                // Add items for this group
+                                items(groupItems) { item ->
+                                    ItemRow(
+                                        item = item,
+                                        checked = selectedItemIds.contains(item.id),
+                                        onCheckedChange = { checked ->
+                                            if (checked) selectedItemIds.add(item.id)
+                                            else selectedItemIds.remove(item.id)
+                                        }
+                                    )
+                                    HorizontalDivider()
+                                }
                             }
                         }
                     }
@@ -101,13 +124,23 @@ fun MainScreen(viewModel: ItemViewModel) {
 }
 
 @Composable
-fun ItemRow(item: Item) {
+fun ItemRow(
+    item: Item,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        Checkbox(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            modifier = Modifier
+                .size(24.dp)
+        )
         Text(
             text = "ID: ${item.id}",
             style = MaterialTheme.typography.bodyLarge,
