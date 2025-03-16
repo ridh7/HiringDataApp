@@ -11,8 +11,10 @@ import com.example.hiringdataapp.databinding.ActivityMainBinding
 import com.example.hiringdataapp.ui.adapters.GroupItemAdapter
 import com.example.hiringdataapp.viewmodel.ItemViewModel
 
+// AppCompatActivity ensures compatibility with older Android versions and modern features.
 class MainActivity : AppCompatActivity() {
 
+    // lateinit avoids nullability since it’s initialized in onCreate.
     private lateinit var binding: ActivityMainBinding
     private val viewModel: ItemViewModel by viewModels()
     private val adapter = GroupItemAdapter()
@@ -20,6 +22,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
+        // Sets the activity’s content view to the binding’s root (ConstraintLayout).
         setContentView(binding.root)
 
         setupRecyclerView()

@@ -24,7 +24,11 @@
             android:textColor="@android:color/white"
             android:textStyle="bold"
             tools:text="List ID: 1" />
-
+        <!--
+        Replace nested RecyclerView with a single RecyclerView using headers
+        (e.g., via ConcatAdapter) for better performance:
+        recyclerView.adapter = ConcatAdapter(headerAdapter, itemsAdapter)
+        -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvItems"
             android:layout_width="match_parent"

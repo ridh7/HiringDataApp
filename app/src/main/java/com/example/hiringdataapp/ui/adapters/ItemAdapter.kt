@@ -10,6 +10,7 @@ import com.example.hiringdataapp.model.Item
 
 class ItemAdapter : RecyclerView.Adapter<ItemAdapter.ItemViewHolder>() {
 
+    // Stores the list of items to display in the RecyclerView.
     private var items: List<Item> = emptyList()
 
     fun setItems(items: List<Item>) {

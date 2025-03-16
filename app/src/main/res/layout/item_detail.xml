@@ -5,7 +5,11 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:padding="8dp">
+    <!--
+    line 2: Arranges child views (two TextViews) in a single direction (horizontal or vertical).
+    line 6: Specifies that child views are arranged horizontally (left to right).
 
+    -->
     <TextView
         android:id="@+id/tvId"
         android:layout_width="wrap_content"
@@ -13,7 +17,10 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         android:textStyle="bold"
         tools:text="ID: 123" />
-
+    <!--
+    line 14: Assigns an ID (tvId) to the TextView.
+    line 19: Sets a sample text for design-time preview.
+    -->
     <TextView
         android:id="@+id/tvName"
         android:layout_width="wrap_content"
