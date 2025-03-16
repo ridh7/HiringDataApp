@@ -17,6 +17,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
@@ -47,50 +48,88 @@ fun MainScreen(viewModel: ItemViewModel) {
     val isLoading by viewModel.isLoading.observeAsState(false)
     val error by viewModel.error.observeAsState(null)
 
+    var searchQuery by remember { mutableStateOf("") }
+
     val context = LocalContext.current
     LaunchedEffect(error) { error?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() } }
+
+    val filtereredItems = remember(searchQuery, items) {
+        if (searchQuery.isBlank()) {
+            items
+        }
+        else {
+            items.mapValues { entry ->
+                entry.value.filter { item ->
+                    item.name?.contains(searchQuery, ignoreCase = true) == true
+                }
+            }.filterValues { it.isNotEmpty() }
+        }
+    }
 
     Scaffold(
         modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues)) {
-            PullRefresh(
-                isRefreshing = isLoading,
-                onRefresh = { viewModel.fetchItems() }
-            ) {
-                if (isLoading && items.isEmpty()) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center).padding(16.dp)
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(8.dp)
-                    ) {
-                        // Flatten groups into the single LazyColumn
-                        items.entries.sortedBy { it.key }.forEach { (listId, groupItems) ->
-                            // Add group header as an item
-                            item {
-                                Card(
-                                    modifier = Modifier.fillMaxWidth().padding(4.dp),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Text(
-                                        text = "List ID: $listId",
-                                        style = MaterialTheme.typography.titleLarge,
-                                        color = MaterialTheme.colorScheme.onPrimary,
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            TextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("Search by name") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                singleLine = true
+            )
+            Box {
+                PullRefresh(
+                    isRefreshing = isLoading,
+                    onRefresh = { viewModel.fetchItems() }
+                ) {
+                    if (isLoading && items.isEmpty()) {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .padding(16.dp)
+                        )
+                    }
+                    else if (filtereredItems.isEmpty() && !isLoading) {
+                        Text("No items found", modifier = Modifier.padding(8.dp))
+                    }
+                    else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(8.dp)
+                        ) {
+                            // Flatten groups into the single LazyColumn
+                            filtereredItems.entries.sortedBy { it.key }.forEach { (listId, groupItems) ->
+                                // Add group header as an item
+                                item {
+                                    Card(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .background(MaterialTheme.colorScheme.primary)
-                                            .padding(8.dp)
-                                    )
+                                            .padding(4.dp),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Text(
+                                            text = "List ID: $listId",
+                                            style = MaterialTheme.typography.titleLarge,
+                                            color = MaterialTheme.colorScheme.onPrimary,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(MaterialTheme.colorScheme.primary)
+                                                .padding(8.dp)
+                                        )
+                                    }
                                 }
-                            }
-                            // Add items for this group
-                            items(groupItems) { item ->
-                                ItemRow(item)
-                                HorizontalDivider()
+                                // Add items for this group
+                                items(groupItems) { item ->
+                                    ItemRow(item)
+                                    HorizontalDivider()
+                                }
                             }
                         }
                     }
