@@ -1,5 +1,7 @@
 package com.example.hiringdataapp.viewmodel
 
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -20,25 +22,25 @@ class ItemViewModel : ViewModel() {
     Declares a private MutableLiveData to hold a map of items grouped by listId.
     The underscore prefix (_items) signals it’s a backing property for a public LiveData.
      */
-    private val _items = MutableLiveData<Map<Int, List<Item>>>()
+    private val _items = mutableStateOf<Map<Int, List<Item>>>(emptyMap())
     /*
     Always expose LiveData publicly while keeping MutableLiveData
     private (the “backing property” pattern).
      */
-    val items: LiveData<Map<Int, List<Item>>> = _items
+    val items: State<Map<Int, List<Item>>> = _items
 
     /*
     Defines a private MutableLiveData and public LiveData for tracking loading state.
     Notifies the UI when data is being fetched (e.g., to show/hide a progress bar).
      */
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
+    private val _isLoading = mutableStateOf(false)
+    val isLoading: State<Boolean> = _isLoading
 
     /*
     Defines a private MutableLiveData and public LiveData for error messages.
      */
-    private val _error = MutableLiveData<String>()
-    val error: LiveData<String> = _error
+    private val _error = mutableStateOf("")
+    val error: State<String> = _error
 
     /*
     An initializer block that calls fetchItems() when the ViewModel is created.

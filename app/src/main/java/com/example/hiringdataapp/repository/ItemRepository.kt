@@ -26,16 +26,11 @@ class ItemRepository {
     suspend fun getItems(): Result<List<Item>>
      */
     suspend fun getItems(): List<Item> {
+        val items = apiService.getItems()
         /*
-        Uses withContext to run the block on the Dispatchers.IO thread pool.
+        Uses withContext to run the block on the Dispatchers.Default thread pool.
          */
-        return withContext(Dispatchers.IO) {
-            /*
-            Handle potential exceptions (e.g., network errors) in production:
-            using try catch
-             */
-            val items = apiService.getItems()
-
+        return withContext(Dispatchers.Default) {
             /*
             Filters the items list, keeping only items where name is neither null nor blank.
              */

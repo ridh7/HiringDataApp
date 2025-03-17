@@ -43,12 +43,12 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen(viewModel: ItemViewModel) {
-    val items by viewModel.items.observeAsState(emptyMap())
-    val isLoading by viewModel.isLoading.observeAsState(false)
-    val error by viewModel.error.observeAsState(null)
+    val items by viewModel.items
+    val isLoading by viewModel.isLoading
+    val error by viewModel.error
 
     val context = LocalContext.current
-    LaunchedEffect(error) { error?.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() } }
+    LaunchedEffect(error) { error.let { Toast.makeText(context, it, Toast.LENGTH_LONG).show() } }
 
     Scaffold(
         modifier = Modifier.fillMaxSize()
